@@ -1,0 +1,6 @@
+__pycache__
+.ipynb_checkpoints
+.vscode
+*/conf/auth.py
+*/conf/mysqlconf.py
+*.log*
