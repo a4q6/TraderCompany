@@ -1,8 +1,10 @@
 import numpy as np
 import pandas as pd
+from dataclasses import dataclass
 from typing import Any, List, Dict, Collection, Union, Callable
-from .Activations import *
-from .BinaryOps import *
+
+from .activations import *
+from .binaryops import *
 
 class Trader:
 
@@ -28,21 +30,21 @@ class Trader:
         self.activation = activation
         self.weights = weights
         self.binary_ops = binary_ops
-        self.lag_term1 = lag_term1 - 1
-        self.lag_term2 = lag_term2 - 1
+        self.lag_term1 = lag_term1 + 1
+        self.lag_term2 = lag_term2 + 1
         self.idx_term1 = idx_term1
         self.idx_term2 = idx_term2
 
 
-    def predict(self, feature_ts: np.ndarray) -> float:
+    def predict(self, feature_array: np.ndarray) -> float:
         """
         Args:
-            feature_ts (np.ndarray): array with shape of [time, #feature]
+            feature_array (np.ndarray): array with shape of [time, #feature]
         Returns:
             float: predict value for targeting asset
         """
         res = 0
         for j in range(self.n_terms):
-            res += self.weights[i] * self.activation[j](feature_ts[-self.lag_term1[j], self.idx_term1[j]], 
-                                                        feature_ts[-self.lag_term2[j], self.idx_term2[j]] )
+            res += self.weights[i] * self.activation[j](feature_array[-self.lag_term1[j], self.idx_term1[j]], 
+                                                        feature_array[-self.lag_term2[j], self.idx_term2[j]] )
         return res

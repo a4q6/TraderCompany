@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from typing import Any, List, Dict, Collection, Union, Callable
 
+N_BINOP = 9
 
 min = min
 

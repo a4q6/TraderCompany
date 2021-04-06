@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from typing import Any, List, Dict, Collection, Union, Callable
 
+N_ACT = 5
 
 def ReLU(x: float) -> float:
     return np.max(0, x)
