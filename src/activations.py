@@ -15,3 +15,20 @@ exp = np.exp
 
 def linear(x: float) -> float:
     return x
+
+
+func_to_int = {
+    ReLU: 1,
+    sign: 2,
+    tanh: 3,
+    exp: 4,
+    linear: 5
+}
+
+int_to_func = {
+    1: ReLU,
+    2: sign,
+    3: tanh,
+    4: exp,
+    5: linear
+}

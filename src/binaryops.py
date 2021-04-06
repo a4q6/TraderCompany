@@ -28,3 +28,28 @@ def left_upper(x: float, y: float) -> float:
 
 def right_upper(x: float, y: float) -> float:
     return (x < y) * 1.
+
+
+func_to_int = {
+    min: 1,
+    max: 2,
+    add: 3,
+    sub: 4,
+    mul: 5,
+    get_left: 6,
+    get_right: 7,
+    left_upper: 8,
+    right_upper: 9
+}
+
+int_to_func = {
+    1: min,
+    2: max,
+    3: add,
+    4: sub,
+    5: mul,
+    6: get_left,
+    7: get_right,
+    8: left_upper,
+    9: right_upper
+}
