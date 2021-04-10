@@ -4,6 +4,8 @@ from typing import Any, List, Dict, Collection, Union, Callable
 
 N_BINOP = 9
 
+
+# funcs
 min = min
 
 max = max
@@ -30,6 +32,7 @@ def right_upper(x: float, y: float) -> float:
     return (x < y) * 1.
 
 
+# hash table
 func_to_int = {
     min: 1,
     max: 2,

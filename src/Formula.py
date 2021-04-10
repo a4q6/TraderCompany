@@ -10,6 +10,8 @@ from .binaryops import *
 from .activations import N_ACT
 from .binaryops import N_BINOP
 
+N_FORMULA_PARAM = 6  # activation, ... idx_term2
+
 
 class Formula:
 
@@ -78,10 +80,10 @@ class Formula:
             Formula: 
         """
         return Formula(
-            activation = activations.int_to_func[ int(round(numerical_repr[0])) ],
-            binary_ops = binaryops.int_to_func[ int(round(numerical_repr[1])) ],
-            lag_term1 = numerical_repr[2],
-            lag_term2 = numerical_repr[3],
-            idx_term1 = numerical_repr[4],
-            idx_term2 = numerical_repr[5],
+            activation = activations.int_to_func[ int(round(numerical_repr[0])) ],  # 0-origin
+            binary_ops = binaryops.int_to_func[ int(round(numerical_repr[1])) ],  # 0-origin
+            lag_term1 = numerical_repr[2],  # 0-origin
+            lag_term2 = numerical_repr[3],  # 0-origin
+            idx_term1 = numerical_repr[4],  # 0-origin
+            idx_term2 = numerical_repr[5],  # 0-origin
         )
