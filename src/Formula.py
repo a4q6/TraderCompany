@@ -3,6 +3,8 @@ import pandas as pd
 from dataclasses import dataclass
 from typing import Any, List, Dict, Collection, Union, Callable
 
+from . import activations
+from . import binaryops
 from .activations import *
 from .binaryops import *
 from .activations import N_ACT
@@ -76,7 +78,7 @@ class Formula:
             Formula: 
         """
         return Formula(
-            activation = activations.int_to_func[ int(round(numerial_repr[0])) ],
+            activation = activations.int_to_func[ int(round(numerical_repr[0])) ],
             binary_ops = binaryops.int_to_func[ int(round(numerical_repr[1])) ],
             lag_term1 = numerical_repr[2],
             lag_term2 = numerical_repr[3],

@@ -11,27 +11,16 @@ from .activations import N_ACT
 from .binaryops import N_BINOP
 
 
-
-""" 
-    Parameter消して formulaにする.
-    おそらくGMがfitする対象はFormula.
-    Formulaが弱学習器になっている.
-            activation (Callable[[float]):
-            binary_op (Callable[[float, float], float]):
-            lag_term1 (int): 
-            lag_term2 (int):
-            idx_term1 (int): 
-            idx_term2 (int): 
-"""
-
-def make_random_trader(n_terms: int, n_features: int, maxlag: int) -> Trader:
+def make_random_trader(max_terms: int, n_features: int, maxlag: int) -> Trader:
     """ 
     Args:
-        n_terms (int):
-        n_features (int): 
+        max_terms (int): max size of M in article
+        n_features (int): S in article
     Returns:
         Trader: 
     """
+
+    n_terms = np.random.randint(1, max_terms+1)
     weights = np.random.uniform(-1, 1, size=n_terms)
 
     formulas = [
