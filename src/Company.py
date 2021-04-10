@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from copy import deepcopy
 from sklearn.mixture import GaussianMixture
-from typing import Any, List, Dict, Collection, Union, Callable
+from typing import Any, List, Dict, Collection, Union, Callable, Union
 warnings.filterwarnings("ignore")
 from statsmodels.api import OLS
 
@@ -39,6 +39,49 @@ class Company:
         self.educate_pct = educate_pct  # 0 ~ 100
 
 
+    def conv_feature(self, feature: Union[List, np.ndarray], label: Union[List, np.ndarray]) -> List:
+        """ make feature timeseries block from feature timeseries.
+        Args:
+            feature (Union[List, np.ndarray]):
+            label (Union[List, np.ndarray]): 
+        Returns:
+            List: list of np.ndarray [time, maxlag+1, #feature], [time, ]
+        """
+        if isinstance(feature, list) and isinstance(label, list):
+            X = []
+            y = []
+            for i in range(len(feature)):
+                _x, _y = _conv_feature(X[i], y[i])
+                X.append(_x)
+                y.append(_y)
+            X = np.concatenate(X)
+            y = np.concatenate(y)
+        
+        elif isinstance(feature, np.ndarray) and isinstance(label, list):
+            X, y = self._conv_feature(feature, label)
+        
+        return X, y
+
+
+    def _conv_feature(self, feature_arr: np.ndarray, return_arr: np.ndarray) -> List:
+        """convert feature timeseries to feature timeseries block with max lag.
+        Args:
+            feature_arr (np.ndarray): array with shape of [time, #feature]
+            return_arr (np.ndarray): array with shape of [time, ]
+        Returns:
+            np.ndarray: feature and label, array with shape of [time-maxlag, maxlag+1, #feature] and [time-maxlag,]
+        """
+        assert return_arr.shape[0] == feature_arr.shape[0]
+        T = return_arr.shape[0]
+        X = np.zeros([feature_arr.shape[0], self.max_lag+1, self.feature_arr.shape[1]]) * np.nan
+        for t in range(self.maxlag+1, T):
+            X[t] = feature_arr[t-self.maxlag-1:t]
+        ind = np.isnan(X[:, 0, 0])
+        y = return_arr[~ind]
+        X = X[~ind]
+        return X, y
+
+
     def predict(self, feature_arr: np.ndarray) -> float:
         """
         Args:
@@ -55,21 +98,35 @@ class Company:
                           eval_method="default") -> None:
         """tradersの予測履歴の末尾を更新. 評価値を更新.
         Args:
-            feature_arr (np.ndarray):
+            feature_arr (np.ndarray): array with shape of [time, #feature]
             return_arr (np.ndarray):
             eval_method (str, optional): Defaults to "default".
         Effects:
             self.traders 
                 .score 
-                ._pred_hist 
+                ._pred_hist
                 ._pred_hist_formulas
+                ._time_index
         """
         for trader in self.traders:
             trader._append_predicts(feature_arr)
             trader._update_score(return_arr, eval_method)
 
 
-    def educate(self, feature_arr: np.ndarray, return_arr: np.ndarray, eval_method="default") -> None:
+    def recalc_evaluation(self, return_arr: np.ndarray, eval_method="default") -> None:
+        """トレーダの評価値のみ更新.
+        Args:
+            return_arr (np.ndarray): 
+            eval_method (str, optional):
+        Effects:
+            self.traders 
+                .score
+        """
+        for trader in self.traders:
+            trader._update_score(return_arr, eval_method)
+
+
+    def educate(self, feature_arr_block: np.ndarray, return_arr: np.ndarray, eval_method="default") -> None:
         """ update traders.weights and update each predict history and score
         Effects:
             self.traders
@@ -78,11 +135,11 @@ class Company:
         for trader in self.traders:
             if trader.score < score_threshold:
                 trader._update_weights(return_arr)
-                trader._recalc_predicts_hist(feature_arr)
+                trader._recalc_predicts_hist(feature_arr_block)
                 trader._update_score(return_arr, eval_method)
 
 
-    def prune_and_generate(self, feature_arr: np.ndarray, return_arr: np.ndarray, eval_method="default") -> None:
+    def prune_and_generate(self, feature_arr_block: np.ndarray, return_arr: np.ndarray) -> None:
         """上位1-Q[%]に対して, GaussianMixtureをfit. これからサンプリングして下Q[%]を置き換える.
         """
 
@@ -138,5 +195,6 @@ class Company:
             M = Ms[i]
             formula_list = [Formula.from_numerical_repr(f) for f in formulas[tmp_idx : tmp_idx+M]]
             trader = Trader(M, formula_list, self.max_lag)
+            trader._recalc_predicts_hist(feature_arr_block)
             tmp_idx += M
         
