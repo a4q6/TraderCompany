@@ -72,7 +72,7 @@ class Formula:
 
 
     @staticmethod
-    def from_numeric_repr(numerical_repr: Collection[float]):
+    def from_numerical_repr(numerical_repr: Collection[float]):
         """ restore Formula instance from numerical representation array.
         Args:
             numeric_repr (Collection[float]): 

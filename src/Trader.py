@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 from dataclasses import dataclass
-from statsmodels.api import OLS
 from typing import Any, List, Dict, Collection, Union, Callable
 
 from .activations import *
