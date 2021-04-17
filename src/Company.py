@@ -13,12 +13,13 @@ from .Trader import Trader
 from .Formula import Formula, N_FORMULA_PARAM
 from .activations import N_ACT
 from .binaryops import N_BINOP
+from .aggregations import 
 
 
-N_GMCOMP_FORMULA = 10 # components
-N_GMSTRD_FORMULA = 2  # stride
-N_GMCOMP_TERMS = 10
-N_GMSTRD_TERMS = 2
+N_GMCOMPONENTS_FORMULA = 10 # components
+N_GBSTRIDES_FORMULA = 2  # stride
+N_GMCOMPONENTS_TERMS = 10
+N_GMSTRIDES_TERMS = 2
 
 
 class Company:
@@ -28,7 +29,7 @@ class Company:
                  n_features: int,
                  max_terms: int,
                  max_lag: int,
-                 aggregate: Callable[[Collection], float],
+                 aggregate: Callable,
                  educate_pct: float
                  ):
         self.n_traders = n_traders
@@ -101,6 +102,7 @@ class Company:
             feature_arr (np.ndarray): array with shape of [time, #feature]
             return_arr (np.ndarray):
             eval_method (str, optional): Defaults to "default".
+                "default": total return.
         Effects:
             self.traders 
                 .score 
@@ -150,40 +152,41 @@ class Company:
 
 
         ## fit GM to good traders
-        # prepare numerical representation
+        # prepare numerical representation of traders. (each trader has Mi formulas)
         n_row1 = sum([trader.n_terms for trader in good_traders])
         formula_arr = np.zeros([n_row1, N_FORMULA_PARAM])
+        # prepare n_terms(= M) array
         n_row2 = len(good_traders)
-        terms_arr = np.zeros(n_row2)
+        nterms_arr = np.zeros(n_row2)
         tmp_idx = 0
         for i,trader in enumerate(good_traders):
             M, formula_numerical = trader.to_numerical_repr()
-            terms_arr[i] = M
+            nterms_arr[i] = M
             formula_arr[tmp_idx : tmp_idx+M] = formula_numerical
             tmp_idx += M
         # fit
         gmm_form = [
             GaussianMixture(n_components=n, random_state=1).fit(formula_arr)
-            for n in range(1, N_GMCOMP_FORMULA, N_GMSTRD_FORMULA)
+            for n in range(1, N_GMCOMPONENTS_FORMULA, N_GBSTRIDES_FORMULA)
         ]
         min_idx = np.argmin([gmm.bic for gmm in gmm_form])
         gmm_form = gmm_form[min_idx]
 
-        gmm_term = [
-            GaussianMixture(n_components=n, random_state=1).fit(terms_arr.reshape(-1,1))
-            for n in range(1, N_GMCOMP_TERMS, N_GMSTRD_TERMS)
+        gmm_nterm = [
+            GaussianMixture(n_components=n, random_state=1).fit(nterms_arr.reshape(-1,1))
+            for n in range(1, N_GMCOMPONENTS_TERMS, N_GMSTRIDES_TERMS)
         ]
-        min_idx = np.argmin([gmm.bic for gmm in gmm_term])
-        gmm_term = gmm_term[min_idx]
+        min_idx = np.argmin([gmm.bic for gmm in gmm_nterm])
+        gmm_nterm = gmm_nterm[min_idx]
 
 
         ## replace bad traders to good traders
         n_new_trader = len(bad_traders)
         # generate n_terms
-        Ms = gmm_term.sample(n_new_trader)[0].reshape(-1,)
+        Ms = gmm_nterm.sample(n_new_trader)[0].reshape(-1,)
         Ms = np.round(Ms).astype(int)
         Ms[Ms==0] = 1
-        Ms[Ms > self.max_temrs] = self.max_terms
+        Ms[Ms > self.max_temrs] = self.max_nterms
         # generate formula
         formulas = np.round(gmm_form.sample(sum(Ms))[0]).astype(int)
         formulas[formulas < 0] = 0
