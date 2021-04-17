@@ -30,7 +30,7 @@ class Company:
                  max_terms: int,
                  max_lag: int,
                  educate_pct: float,
-                 aggregate: Callable = aggregations.simple_average,
+                 aggregate: Callable = simple_average,
                  ):
         """
         Args:
