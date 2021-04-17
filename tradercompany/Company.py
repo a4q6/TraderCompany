@@ -7,7 +7,6 @@ from typing import Any, List, Dict, Collection, Union, Callable, Union
 warnings.filterwarnings("ignore")
 from statsmodels.api import OLS
 
-
 from .traderutil import make_random_trader
 from .Trader import Trader
 from .Formula import Formula, N_FORMULA_PARAM
