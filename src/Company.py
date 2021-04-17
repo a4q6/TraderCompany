@@ -13,7 +13,7 @@ from .Trader import Trader
 from .Formula import Formula, N_FORMULA_PARAM
 from .activations import N_ACT
 from .binaryops import N_BINOP
-from .aggregations import 
+from .aggregations import simple_average
 
 
 N_GMCOMPONENTS_FORMULA = 10 # components
@@ -29,9 +29,18 @@ class Company:
                  n_features: int,
                  max_terms: int,
                  max_lag: int,
-                 aggregate: Callable,
-                 educate_pct: float
+                 educate_pct: float,
+                 aggregate: Callable = aggregations.simple_average,
                  ):
+        """
+        Args:
+            n_traders (int): 
+            n_features (int): 
+            max_terms (int): 
+            max_lag (int): max lookback length. maxlag=0 means model use only latest data.
+            educate_pct (float): educate & prune parameter. 0<.<100
+            aggregate (Callable, optional): [description]. Defaults to aggregations.simple_average.
+        """
         self.n_traders = n_traders
         self.aggregate = aggregate
         self.max_lag = max_lag
@@ -42,11 +51,12 @@ class Company:
 
     def conv_feature(self, feature: Union[List, np.ndarray], label: Union[List, np.ndarray]) -> List:
         """ make feature timeseries block from feature timeseries.
+            if passed List, apply blocknize for each array and concatenate to one array.
         Args:
             feature (Union[List, np.ndarray]):
             label (Union[List, np.ndarray]): 
         Returns:
-            List: list of np.ndarray [time, maxlag+1, #feature], [time, ]
+            X,y: np.ndarray[time - maxlag*n_list, maxlag+1, #feature], np.ndarray[time - maxlag*n_list, ]
         """
         if isinstance(feature, list) and isinstance(label, list):
             X = []
@@ -58,19 +68,22 @@ class Company:
             X = np.concatenate(X)
             y = np.concatenate(y)
         
-        elif isinstance(feature, np.ndarray) and isinstance(label, list):
+        elif isinstance(feature, np.ndarray) and isinstance(label, np.ndarray):
             X, y = self._conv_feature(feature, label)
         
+        else:
+            raise ValueError("type of feature and label are different. check inputs.")
+
         return X, y
 
 
     def _conv_feature(self, feature_arr: np.ndarray, return_arr: np.ndarray) -> List:
-        """convert feature timeseries to feature timeseries block with max lag.
+        """ convert feature timeseries to feature timeseries block with max lag.
         Args:
             feature_arr (np.ndarray): array with shape of [time, #feature]
             return_arr (np.ndarray): array with shape of [time, ]
         Returns:
-            np.ndarray: feature and label, array with shape of [time-maxlag, maxlag+1, #feature] and [time-maxlag,]
+            np.ndarray: feature and label. array with shape of [time - maxlag, maxlag+1, #feature] and [time - maxlag,]
         """
         assert return_arr.shape[0] == feature_arr.shape[0]
         T = return_arr.shape[0]
@@ -90,7 +103,9 @@ class Company:
         Returns:
             float: 
         """
-        return self.aggregate([trader.predict(feature_arr) for trader in self.traders])
+        return self.aggregate(
+            np.array([trader.predict(feature_arr) for trader in self.traders])
+        )
 
 
     def update_evaluation(self,
