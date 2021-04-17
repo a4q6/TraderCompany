@@ -1,23 +1,19 @@
 # TraderCompany
 
-Formulaが弱学習器になっている (sum M_i 本ある)
-    activation (Callable[[float]):
-    binary_op (Callable[[float, float], float]):
-    lag_term1 (int): 
-    lag_term2 (int):
-    idx_term1 (int): 
-    idx_term2 (int):
-
-TraderはFormulaをまとめる中間学習器 (i=1,2,3...N人):
-    + weight
-    * educateおよび,pruneのために過去の成績を保持しておく必要がある.
-
-
-Companyは最適化を兼ねた強学習器:
-    * 連続したtimeseriesを与えてfitする必要がある.
-
-    educate:
-        OLS
-
-    prune:
-        GM
+### summary
+- Formula:  
+    弱学習器. 過去のfeature値から適当に2項演算と活性化を噛ませて予測値を出力.  
+    (feature1_with_lag1, feature2_with_lag2) - binOp -> - activation -> prediction.  
+  
+- Trader:  
+    Formulaをまとめる中間学習器. M本のFormulaを持つ.
+    各Formulaへのweightを保持しており, 重み和をとって予測値を出力する.  
+    weightは後述のCompanyによる"educate"により, labelとの2乗誤差を最小化するように最適化される.
+  
+- Company:  
+    最適化を兼ねた強学習器. N人のtraderを保持している.  
+    Companyの予測はN人のtraderの予測値をアンサンブルして出力.    
+    - educate():  
+        下位TraderについてOLSでweightを調整し直す.
+    - prune():  
+        下位Traderをdiscardし, 上位TraderにfitさせてGaussianMixtureからのサンプルで置き換える.

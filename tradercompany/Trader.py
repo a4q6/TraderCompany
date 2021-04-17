@@ -20,7 +20,7 @@ class Trader:
         self.max_lag = max_lag
         self.score = 0
         self._pred_hist = np.zeros(max_lag)*np.nan  # length T
-        self._pred_hist_formulas = np.zeros([max_lag, len(formulas)])*np.nan  # length [T, n_terms]
+        self._pred_hist_formulas = np.zeros([max_lag, len(formulas)])*np.nan  # shape: [T, n_terms]
         self._time_index = 0
 
 
