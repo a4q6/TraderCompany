@@ -81,9 +81,14 @@ class Formula:
         """
         return Formula(
             activation = activations.int_to_func[ int(round(numerical_repr[0])) ],  # 0-origin
-            binary_ops = binaryops.int_to_func[ int(round(numerical_repr[1])) ],  # 0-origin
+            binary_op  = binaryops.int_to_func[ int(round(numerical_repr[1])) ],  # 0-origin
             lag_term1 = numerical_repr[2],  # 0-origin
             lag_term2 = numerical_repr[3],  # 0-origin
             idx_term1 = numerical_repr[4],  # 0-origin
             idx_term2 = numerical_repr[5],  # 0-origin
         )
+
+    
+    def to_str(self, feature_names: Collection) -> str:
+        str_expr = f"{self.activation.__name__}, {self.binary_op.__name__}, {feature_names[self.idx_term1]}[-{self.lag_term1}], {feature_names[self.idx_term2]}[{-self.lag_term2}]"
+        return str_expr

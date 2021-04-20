@@ -27,12 +27,12 @@ def make_random_trader(max_terms: int, n_features: int, max_lag: int) -> Trader:
 
     formulas = [
         Formula(
-            activations.int_to_func[np.random.randint(1, N_ACT+1)],
-            binaryops.int_to_func[np.random.randint(1, N_BINOP+1)],
+            activations.int_to_func[np.random.randint(N_ACT)],
+            binaryops.int_to_func[np.random.randint(N_BINOP)],
+            np.random.randint(1, max_lag+1),  # 1 ~ max_lag+1 の値がrandomで出る.
+            np.random.randint(1, max_lag+1),  # 1だけ大きい数になっているのは lag=0 <-> index=-1 に対応するため.(array[-1]で末尾)
             np.random.randint(n_features),
-            np.random.randint(n_features),
-            np.random.randint(1, max_lag+2),  # 1 ~ max_lag+1 の値がrandomで出る.
-            np.random.randint(1, max_lag+2)  # 1だけ大きい数になっているのは lag=0 <-> index=-1 に対応するため.(array[-1]で末尾)
+            np.random.randint(n_features)
         )
         for j in range(n_terms)
     ]

@@ -4,3 +4,4 @@ __pycache__
 */conf/auth.py
 */conf/mysqlconf.py
 *.log*
+*.csv

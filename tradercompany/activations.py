@@ -6,7 +6,7 @@ N_ACT = 5
 
 # funcs
 def ReLU(x: float) -> float:
-    return np.max(0, x)
+    return max(0, x)
 
 sign = np.sign
 

@@ -19,8 +19,8 @@ class Trader:
         self.formulas = formulas
         self.max_lag = max_lag
         self.score = 0
-        self._pred_hist = np.zeros(max_lag)*np.nan  # length T
-        self._pred_hist_formulas = np.zeros([max_lag, len(formulas)])*np.nan  # shape: [T, n_terms]
+        self._pred_hist = np.zeros(1)*np.nan  # length T
+        self._pred_hist_formulas = np.zeros([1, len(formulas)])*np.nan  # shape: [T, n_terms]
         self._time_index = 0
 
 
@@ -64,7 +64,38 @@ class Trader:
             self._pred_hist_formulas[t] = preds_f
 
 
-    def _append_predicts(self, feature_arr: np.ndarray) -> None:
+    def _update_score(self, return_arr: np.ndarray, eval_lookback: int, eval_method="default") -> None:
+        """ 
+        Args:
+            return_arr (np.ndarray): 
+            eval_method (str, optional): 
+                which method to use to evaluate traders.
+                - "default":
+                    cumulative return : sum sign(pred_t) * ret_t
+        Effects:
+            self.score (positive is good)
+        """
+        if eval_method == "default":
+            self.score = np.sum( (np.sign(self._pred_hist)[-eval_lookback:] * return_arr[-eval_lookback:]) )
+
+        else:
+            raise NotImplementedError(f"unknown eval_method : {eval_method}")
+
+
+    def recalc(self, feature_arr_block: np.ndarray, return_arr: np.ndarray, eval_lookback, eval_method="default"):
+        """ 予測値の履歴をリセット計算し直す. 合わせて評価値も計算し直す.
+        Args:
+            feature_arr_block (np.ndarray):
+            return_arr (np.ndarrayeval_method, optional): [description]. Defaults to "default".
+        Returns:
+            Trader: self
+        """
+        self._recalc_predicts_hist(feature_arr_block)
+        self._update_score(return_arr, eval_lookback, eval_method)
+        return self
+
+
+    def _append_predicts_hist(self, feature_arr: np.ndarray) -> None:
         """ トレーダおよび保持しているFormulaの予測値履歴の末尾を追記.
         Args:
             feature_arr (np.ndarray):
@@ -75,43 +106,34 @@ class Trader:
         self._time_index += 1
         pred, preds_f = self._predict_with_formula(feature_arr)
         self._pred_hist = np.append(self._pred_hist, pred)
-        self._pred_hist_formulas = np.append(self._pred_hist_formulas, preds_f)
+        self._pred_hist_formulas = np.append(self._pred_hist_formulas, preds_f, axis=0)
 
 
-    def _update_score(self, return_arr: np.ndarray, eval_method="default") -> None:
-        """ 
-        Args:
-            return_arr (np.ndarray): 
-            eval_method (str, optional): 
-                which method to use to evaluate traders.
-                - "default":
-                    cumulative return : sum sign(pred_t) * ret_t
-        Effects:
-            self.score
-        """
-        if eval_method == "default":
-            self.score = np.sum( (np.sign(self._pred_hist) * return_arr) )
-
-        else:
-            raise NotImplementedError(f"unknown eval_method : {eval_method}")
-
-
-    def _update_weights(self, return_arr: np.ndarray) -> None:
+    def _update_weights(self, return_arr: np.ndarray, eval_lookback) -> None:
         """ weightsを更新
         Args:
             return_arr (np.ndarray):
         Effects:
             self.weights
         """
-        y = return_arr
-        X = self._pred_hist_formulas
+        y = return_arr[-eval_lookback:]
+        X = self._pred_hist_formulas[-eval_lookback:]
         self.weights = OLS(y, X).fit().params
 
 
-    def _to_numerial_repr(self) -> List:
+    def _to_numerical_repr(self) -> List:
         """
         Returns:
             List: {M, (formula_params)_j}
         """
         formula_arr = np.array([formula.to_numerical_repr() for formula in self.formulas])
-        return self.n_temrs, formula_arr
+        return self.n_terms, formula_arr
+
+
+    def to_str(self, feature_names):
+        return [str(round(w, 5))+", "+formula.to_str(feature_names) for w,formula in zip(self.weights, self.formulas)]
+
+
+    def cumulative_pnl(self, return_arr: np.ndarray):
+        assert return_arr.shape[0] == self._pred_hist.shape[0]
+        return pd.Series(np.sign(self._pred_hist) * return_arr).cumsum()
