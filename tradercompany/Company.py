@@ -35,7 +35,8 @@ class Company:
                  educate_pct: float,
                  aggregate: Callable = simple_average,
                  eval_method: str = "default",
-                 eval_lookback: int=100
+                 eval_lookback: int=100,
+                 seed = 1
                  ):
         """
         Args:
@@ -57,6 +58,7 @@ class Company:
         self._max_job = multiprocessing.cpu_count() - 1
         self.eval_method = eval_method
         self.eval_lookback = eval_lookback
+        np.random.seed(seed)
 
 
     def conv_feature(self, feature: Union[List, np.ndarray], label: Union[List, np.ndarray]) -> List:
@@ -142,15 +144,15 @@ class Company:
             # predict & eval at i=t sample 
             # t_init = max(0, t - calib_lookback)
             t_init = 0
-            pred[t] = self.predict(feature_arr_block[t], **kwargs_predict)
-            self.append_evaluation(feature_arr_block[t_init:t+1][-1], return_arr[t_init:t+1])
+            pred[t] = self.predict(feature_arr_block[:t+1][-1], _self=self, **kwargs_predict)
+            self.append_evaluation(feature_arr_block[:t+1][-1], return_arr[:t+1])
 
             if t % calib_stride == 0:
                 # recalibarte on 0<=i<=t sample
-                self.educate(feature_arr_block[t_init:t+1], return_arr[t_init:t+1])
-                self.prune_and_generate(feature_arr_block[t_init:t+1], return_arr[t_init:t+1])
+                self.educate(feature_arr_block[:t+1], return_arr[:t+1])
+                self.prune_and_generate(feature_arr_block[:t+1], return_arr[:t+1])
 
-        return pred
+        return pd.Series(pred)
 
 
     def predict(self, feature_arr: np.ndarray, **kwargs) -> float:
@@ -163,12 +165,12 @@ class Company:
         if feature_arr.ndim == 2:
             # predict on one sample
             return self.aggregate(
-                np.array([trader.predict(feature_arr) for trader in self.traders], **kwargs)
+                np.array([trader.predict(feature_arr) for trader in self.traders]), **kwargs
             )
         elif feature_arr.ndim == 3:
             # predict on multiple samples 
             return np.array(
-                [self.aggregate(np.array([trader.predict(arr) for trader in self.traders], **kwargs)) 
+                [self.aggregate(np.array([trader.predict(arr) for trader in self.traders]), **kwargs) 
                  for arr in feature_arr]
             )
 
